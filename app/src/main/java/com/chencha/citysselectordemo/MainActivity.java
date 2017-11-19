@@ -1,6 +1,7 @@
 package com.chencha.citysselectordemo;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
@@ -87,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private String flag;
     private FrameLayout frameLayout;
-    private String cityName, mSelectCityName;
+    private String cityName, mSelectCityName, mCityCounty;
 
     private String capitalSelect, city;
 
@@ -101,13 +102,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void initView() {
-
-//        if (LocationUtils.isLocationPermissionGranted(this)
-//                && LocationUtils.isLocationProviderEnabled(this)) {
-//        initLocation();
-//        }
-
-
         //添加 headview
         View mHeadView = View.inflate(this, R.layout.head_city_layout, null);
         mLayoutContent = (LinearLayout) mHeadView.findViewById(R.id.head_city);
@@ -130,12 +124,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mSelectselCounty = (TextView) mHeadView.findViewById(R.id.selsect_county_district);
 
 
+        Bundle bundle = getIntent().getExtras();
+        if (bundle != null) {
+            cityName = bundle.getString("city");
+            mCityCounty = bundle.getString("LocationCity");
+        }
+        if (!TextUtils.isEmpty(mCityCounty)) {
+            tvCurrent.setText("您正在看：" + cityName + mCityCounty);
+        } else {
+            tvCurrent.setText("您正在看：" + cityName);
+        }
+
         //实例化 汉字转拼音
         characterParser = characterParser.getInstance();
         pinyinComparator = new PinyinComparator();
 
         countryLvcountry.addHeaderView(mHeadView);
-
 
         sidrbar.setTextView(dialog);
         sidrbar.setOnTouchingLetterChangedListener(new SideBar.OnTouchingLetterChangedListener() {
@@ -207,6 +211,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mHotList.setAdapter(mCityItemAdapter);
         mCityItemAdapter.notifyDataSetChanged();
 
+        //热门城市
+        mCityItemAdapter.setItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+                cityName = mHotCitys.get(position).getName() + "市";
+                tvCurrent.setText("您正在看：" + cityName);
+//                SPUtils.put("city_county","");
+//                SPUtils.put("cityName", cityName);
+                frameLayout.setVisibility(View.VISIBLE);
+                rvResult.setVisibility(View.GONE);
+                mLinearCity.setVisibility(View.GONE);
+                filterEdit.setText("");
+                hideSoftInput(filterEdit.getWindowToken());
+                Bundle bundle = new Bundle();
+                Intent intent = new Intent(MainActivity.this, FistMainActivity.class);
+                bundle.putString("city", cityName);
+                bundle.putString("LocationCity", "");
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onItemLongClick(View view) {
+
+            }
+        });
+
 
         provinces = new ArrayList<String>();
         for (RegionInfo info : mRegionInfoList) {
@@ -222,8 +253,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                data.putExtra("cityName", ((SortModel) mCitySortAdapter.getItem(position - 1)).getName());
                 //设置选择的城市
                 cityName = ((SortModel) mCitySortAdapter.getItem(position - 1)).getName();
+//                SPUtils.put("cityName", cityName);
+//                SPUtils.put("city_county","");
                 tvCurrent.setText("您正在看：" + cityName);
-
                 //选择城市  默认关闭  区县列表
                 if (mLinearCity.getVisibility() == View.VISIBLE) {
                     mLinearCity.setVisibility(View.GONE);
@@ -346,11 +378,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * @param areasBeanList
      */
 
-    private void initCityData(List<RegionInfo.AreasBean> areasBeanList) {
+    private void initCityData(final List<RegionInfo.AreasBean> areasBeanList) {
         mCountyItemList.setLayoutManager(new GridLayoutManager(this, 3));
         mSelectCityAdapter = new SelectCityAdapter(this, areasBeanList);
         mCountyItemList.setAdapter(mSelectCityAdapter);
         mSelectCityAdapter.notifyDataSetChanged();
+
+        mSelectCityAdapter.setItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+                String mDistrict_county = areasBeanList.get(position).getSsqname();
+                tvCurrent.setText("您正在看：" + cityName + mDistrict_county);
+                //需求 返回首页  --->首页数据展示  区县  -->选择裂变展示  城市
+//                SPUtils.put("cityName", cityName);
+//                SPUtils.put("city_county", mDistrict_county);  //区县  首页显示
+
+                Bundle bundle = new Bundle();
+                Intent intent = new Intent(MainActivity.this, FistMainActivity.class);
+                bundle.putString("city", cityName);
+                bundle.putString("LocationCity", mDistrict_county);
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onItemLongClick(View view) {
+
+            }
+        });
     }
 
 
@@ -427,14 +482,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void onItemClick(View view, int position) {
                     cityName = finalFilterDateList.get(position).getName();
                     Log.d("aaaa", cityName);
-
+//                    SPUtils.put("cityName", cityName);
+//                    SPUtils.put("city_county","");
                     tvCurrent.setText("您正在看：" + cityName);
-
                     frameLayout.setVisibility(View.VISIBLE);
                     rvResult.setVisibility(View.GONE);
                     mLinearCity.setVisibility(View.GONE);
                     filterEdit.setText("");
                     hideSoftInput(filterEdit.getWindowToken());
+
+                    Bundle bundle = new Bundle();
+                    Intent intent = new Intent(MainActivity.this, FistMainActivity.class);
+                    bundle.putString("city", cityName);
+                    bundle.putString("LocationCity", "");
+                    intent.putExtras(bundle);
+                    startActivity(intent);
 
                 }
 
@@ -469,90 +531,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return result;
         }
     }
-
-
-//    private void initLocation() {
-//        mLocationHelper = new LocationHelper(this);
-//        mLocationHelper.initLocation(new MyLocationListener() {
-//            @Override
-//            public void updateLastLocation(Location location) {
-//                mLongitude = location.getLongitude();
-//                mLatitude = location.getLatitude();
-//            }
-//
-//            @Override
-//            public void updateLocation(Location location) {
-//                mLongitude = location.getLongitude();
-//                mLatitude = location.getLatitude();
-//            }
-//
-//            @Override
-//            public void updateStatus(String provider, int status, Bundle extras) {
-//                Log.d("city_name", provider);
-//            }
-//
-//            @Override
-//            public void updateGpsStatus(GpsStatus gpsStatus) {
-//
-//            }
-//        });
-//    }
-//
-//    protected boolean canGetLocation() {
-//        return mLongitude != 0 || mLatitude != 0;
-//    }
-//
-//    protected double getLongitude() {
-//        return mLongitude;
-//    }
-//
-//    protected double getLatitude() {
-//        return mLatitude;
-//    }
-
-
-//    /**
-//     * 权限管理
-//     */
-//    public void showMissingPermissionDialog() {
-//        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-//        builder.setTitle("帮助");
-//        builder.setMessage(R.string.basic_string_help_text);
-//
-//        // 拒绝, 退出应用
-//        builder.setNegativeButton(R.string.basic_quit, new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int which) {
-//                dialog.dismiss();
-//            }
-//        });
-//
-//        builder.setPositiveButton(R.string.basic_settings, new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int which) {
-//                startAppSettings();
-//            }
-//        });
-//
-//        builder.setCancelable(false);
-//
-//        builder.show();
-//    }
-//
-//    // 启动应用的设置
-//    public void startAppSettings() {
-//        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-//        intent.setData(Uri.parse("package:" + getPackageName()));
-//        startActivity(intent);
-//    }
-//
-//    @Override
-//    protected void onDestroy() {
-//        super.onDestroy();
-//        if (mLocationHelper != null) {
-//            mLocationHelper.removeLocationUpdatesListener();
-//        }
-//    }
 
 
     /**
