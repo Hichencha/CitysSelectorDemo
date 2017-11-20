@@ -5,11 +5,13 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.chencha.citysselectordemo.MainActivity;
 import com.chencha.citysselectordemo.R;
 import com.chencha.citysselectordemo.bean.RegionInfo;
+import com.chencha.citysselectordemo.utils.OnItemClickListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,12 @@ public class CityItemAdapter extends RecyclerView.Adapter<CityItemAdapter.Viewho
     private Context mContext;
     private List<RegionInfo> mInfoList = new ArrayList<>();
 
+    private OnItemClickListener mOnItemClickListener;
+
+    public void setItemClickListener(OnItemClickListener itemClickListener) {
+        mOnItemClickListener = itemClickListener;
+    }
+
     public CityItemAdapter(MainActivity mainActivity, List<RegionInfo> hotCitys) {
         this.mContext = mainActivity;
         this.mInfoList = hotCitys;
@@ -39,9 +47,17 @@ public class CityItemAdapter extends RecyclerView.Adapter<CityItemAdapter.Viewho
     }
 
     @Override
-    public void onBindViewHolder(Viewholder holder, int position) {
-          String   mCityName = mInfoList.get(position).getName();
+    public void onBindViewHolder(Viewholder holder, final int position) {
+        String mCityName = mInfoList.get(position).getName();
         holder.mTitle.setText(mCityName);
+        holder.mItem.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mOnItemClickListener != null) {
+                    mOnItemClickListener.onItemClick(v, position);
+                }
+            }
+        });
     }
 
     @Override
@@ -50,10 +66,13 @@ public class CityItemAdapter extends RecyclerView.Adapter<CityItemAdapter.Viewho
     }
 
     public class Viewholder extends RecyclerView.ViewHolder {
-        TextView  mTitle;
+        TextView mTitle;
+        LinearLayout mItem;
+
         public Viewholder(View itemView) {
             super(itemView);
             mTitle = (TextView) itemView.findViewById(R.id.id_tv_cityname);
+            mItem = (LinearLayout) itemView.findViewById(R.id.item);
         }
     }
 }
